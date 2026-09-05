@@ -42,6 +42,24 @@ def bind_x5(client):
     return catalog, binding.json()
 
 
+def test_host_agent_board_preflight_and_board_binding(client):
+    assert client.post("/api/internal/workers/register", headers=WORKER, json=registration()).status_code == 200
+    agents = client.get("/api/admin/host-agents", headers=ADMIN)
+    assert agents.status_code == 200
+    assert agents.json()[0]["id"] == "x5-a" and agents.json()[0]["host_state"] == "ONLINE"
+    created = client.post("/api/admin/boards", headers=ADMIN, json={
+        "agent_id": "x5-a", "name": "x5-board-01", "board_type": "X5", "connection_ref": "secret-ref:x5-board-01"})
+    assert created.status_code == 201 and created.json()["status"] == "UNVERIFIED"
+    board = client.post(f"/api/admin/boards/{created.json()['id']}/test", headers=ADMIN)
+    assert board.status_code == 200 and board.json()["status"] == "READY"
+    catalog = x5_catalog(client)
+    image = client.get("/api/admin/host-images", headers=ADMIN).json()[0]
+    binding = client.post("/api/admin/platform-bindings", headers=ADMIN, json={
+        "agent_id": "x5-a", "catalog_id": catalog["id"], "host_image_id": image["id"],
+        "board_id": board.json()["id"], "capabilities": ["static_check", "compile", "board_smoke"], "max_concurrency": 1})
+    assert binding.status_code == 201 and binding.json()["board_id"] == board.json()["id"]
+
+
 def test_candidate_cannot_auto_admit_or_supply_platform_id(client):
     assert client.post("/api/internal/workers/register", headers=WORKER, json=registration()).status_code == 200
     assert client.get("/api/admin/platform-candidates", headers=ADMIN).json() == []

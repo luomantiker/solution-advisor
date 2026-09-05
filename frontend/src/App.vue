@@ -33,6 +33,7 @@ const pageHeader = computed(() => {
   if (route.path === '/people') return { eyebrow: '治理控制台', title: '人员管理', description: '创建、启用或调整您有权管理的账号与角色。' }
   if (route.path === '/system-settings') return { eyebrow: '系统治理', title: '系统设置', description: '管理员可备份和恢复平台配置；全局策略仅超级管理员可修改。' }
   if (route.path === '/platform-command-template-guide') return { eyebrow: '平台管理', title: '系统授权占位符', description: '了解平台接入规则中可以安全使用的系统变量。' }
+  if (route.path === '/platform-bindings') return { eyebrow: '平台与执行资源', title: 'Platform Binding', description: '管理 HostAgent、评估板卡与已发布平台目录之间的受控执行关系。' }
   if (route.path === '/admin') return { eyebrow: '平台与执行资源', title: '平台管理', description: '查看平台接入进度、已发布平台和当前可用的执行资源。' }
   return { eyebrow: 'Solution Advisor', title: '工作区', description: '查看当前账号可访问的业务信息。' }
 })
@@ -123,7 +124,7 @@ async function deleteNotification(item: any) {
 function openHelp() { helpOpen.value = !helpOpen.value; notificationOpen.value = false }
 watch([signedIn, () => route.path, () => principal.value?.role], () => {
   if (!signedIn.value) return
-  if ((route.path === '/people' && !isAdmin.value) || (route.path === '/admin' && !isAdmin.value) || (route.path === '/system-settings' && !isAdmin.value)) void router.replace('/')
+  if ((route.path === '/people' && !isAdmin.value) || (route.path === '/admin' && !isAdmin.value) || (route.path === '/platform-bindings' && !isAdmin.value) || (route.path === '/system-settings' && !isAdmin.value)) void router.replace('/')
 })
 onMounted(async () => { await Promise.all([loadOptions(), loadSession()]) })
 </script>
