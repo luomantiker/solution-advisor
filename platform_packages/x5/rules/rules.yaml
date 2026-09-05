@@ -1,0 +1,3 @@
+version: "1.0.0"
+description: "M4-A 仅记录 X5 平台专有的 ONNX 静态事实与风险提示；编译结果以真实工具链日志为准。"
+forbidden_conclusions: [board_runnable, performance_verified, accuracy_verified, deployment_recommended]

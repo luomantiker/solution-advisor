@@ -1,0 +1,48 @@
+# M5-A-R1 固定 Runner 安装模板；复制后的实际实例仅能放在 Worker Host 的 /etc，
+# 密钥、板端连接资料和真实路径不得提交 Git、写入网页或 Candidate。
+# 当前真实固定 Runner、镜像自检、版本化 fixture 编译和板端 perf 均已有验收记录；
+# 但尚未作为受保护 HostAgent 实例安装/注册，因此不能创建 Catalog、Binding 或 Worker。
+readiness: CANDIDATE_VALIDATION_ONLY
+platform_identity:
+  platform_id: NOT_ASSIGNED_BY_CATALOG
+  platform_type: S100
+  target_version: "3.7.0"
+candidate_toolchain_image:
+  reference: registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_cpu:v3.7.0
+  immutable_digest: sha256:f14856f507469d7fd3cd23c94308418cd98f714c7b4d7fcd9c965348c7f188f5
+  host_architecture: linux/amd64
+  discovered_python: "3.10.12"
+  sdk_version: "hb_compile 3.5.3; HBDK 4.7.5; HMCT 2.6.5; container UCP 3.13.6"
+  license_status: NOT_CONFIRMED
+runner_contract:
+  fixed_entrypoint: python -m platform_runner execute --request /work/input/request.json --result /work/output/result.json
+  fixed_entrypoint_status: VERIFIED_IN_LOCKED_IMAGE
+  input_contract: ONNX_SHA256_MANAGED_INPUT
+  output_contract: RESULT_JSON_AND_SHA256_ARTIFACTS
+  compile_artifact_format: s100_hbm
+  self_check: VERIFIED_IN_LOCKED_IMAGE
+  offline_fixture: platform_packages/s100/tests/fixtures/s100_minimal_16x16.onnx
+board_contract:
+  runtime: "hrt_model_exec 3.7.3 on authorized board"
+  # 已实际确认固定性能入口；S100 制品为 .hbm / s100_hbm，不复用 X5 解析或结论。
+  fixed_invocation: hrt_model_exec perf
+  fixed_invocation_status: VERIFIED_ON_VERSIONED_FIXTURE
+  profile_or_output_support: profiler.log_and_profiler.csv
+  device_access: VERIFIED_ON_AUTHORIZED_BOARD
+security:
+  registration_token: HOST_PROTECTED_SECRET_ONLY
+  board_connection: HOST_PROTECTED_SECRET_ONLY
+  user_supplied_command_path_docker_argument: FORBIDDEN
+capacity:
+  max_concurrency: NOT_MEASURED
+  health_check: CONTROL_PLANE_HEARTBEAT
+admission_gate:
+  required_before_catalog_available:
+    - reviewed_platform_package
+    - immutable_image_lock
+    - fixed_runner_and_self_check
+    - offline_contract_test_and_evidence
+    - administrator_review_record
+    - host_image_discovery_with_version_rule_confirmation
+    - current_candidate_revision_hostagent_validation
+    - s100_artifact_and_evidence_return

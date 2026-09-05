@@ -1,0 +1,11 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY pyproject.toml uv.lock ./
+COPY src ./src
+COPY alembic ./alembic
+COPY alembic.ini ./
+ENV UV_INDEX_URL=https://pypi.org/simple
+RUN uv sync --frozen --no-dev
+ENV PATH="/app/.venv/bin:$PATH"
+CMD ["python", "-m", "solution_advisor.common_analyzer.runner"]

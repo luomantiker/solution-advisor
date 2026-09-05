@@ -1,0 +1,6 @@
+# The base image is preloaded on the Worker Host; do not docker load at task time.
+FROM openexplorer/ai_toolchain_ubuntu_20_x5_gpu:v1.2.8-py310
+COPY runner /opt/solution-advisor/platform-runner
+COPY rules /opt/solution-advisor/platform-rules
+ENV PYTHONPATH=/opt/solution-advisor/platform-runner:/opt/solution-advisor/platform-rules
+ENTRYPOINT ["python3", "-m", "platform_runner"]

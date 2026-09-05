@@ -1,0 +1,15 @@
+image: openexplorer/ai_toolchain_ubuntu_20_x5_gpu:v1.2.8-py310
+image_id: sha256:e9230ca9c1b65e4688f6103dad547b0785f75cd1ecbb536e7d939a7188419593
+digest: null # 预加载镜像的 Docker inspect 未返回 RepoDigest。
+created: "2024-09-26T11:34:22.436285056Z"
+os: linux
+architecture: amd64
+toolchain:
+  hb_mapper: "1.24.3"
+  python: "3.10.15"
+self_check:
+  - "python3 --version"
+  - "hb_mapper --version"
+  - "hb_model_modifier --help"
+  - "python3 -c 'import horizon_tc_ui'"
+capabilities: [static_check, compile]

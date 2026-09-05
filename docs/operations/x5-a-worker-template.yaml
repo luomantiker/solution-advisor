@@ -1,0 +1,14 @@
+# X5 直连 Worker 实例模板；复制到 Agent Host 后按实际实例名保存。
+# 生效优先级：控制面 Catalog/Binding/任务租约 > 本 YAML 的 Host 固定事实 > 引用的板端 Profile/Secret。
+
+# 1. 实例身份与能力声明。
+instance_id: x5-a
+worker_type: host-agent
+image: openexplorer/ai_toolchain_ubuntu_20_x5_gpu:v1.2.8-py310
+max_concurrency: 1
+capabilities: [static_check, compile, board_smoke]
+# 2. 板端 Profile 引用。平台身份由控制面审核后的 PlatformCatalog 决定，不能由 HostAgent 配置、镜像或 tag 声称。
+# M4-B-R0：板端 Profile 只存在于 HostAgent Host 的受保护配置中，不进入 Git。
+board_profile_path: /etc/solution-advisor/workers/x5-a/board.yaml
+# board_smoke 只允许固定 hrt_model_exec perf 调用；原始 profile 回传并解析为可追溯性能记录，
+# 不产生精度、稳定性、功耗或推荐部署结论。

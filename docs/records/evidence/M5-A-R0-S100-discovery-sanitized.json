@@ -1,0 +1,38 @@
+{
+  "evidence_id": "M5-A-R0-S100-discovery-sanitized-1",
+  "captured_at": "2026-08-30T02:44:23+08:00",
+  "classification": "脱敏只读环境发现",
+  "worker_host": {
+    "alias": "local-worker-host",
+    "os": "Ubuntu 22.04",
+    "kernel_architecture": "Linux 6.6.87.2-microsoft-standard-WSL2 / x86_64",
+    "docker": "Docker 29.4.3"
+  },
+  "candidate_toolchain_image": {
+    "reference": "registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_cpu:v3.7.0",
+    "immutable_digest": "sha256:f14856f507469d7fd3cd23c94308418cd98f714c7b4d7fcd9c965348c7f188f5",
+    "image_id": "sha256:eb401fa186f8f368d2c8d60d9b051893ee2be3c7317285f87c10e296eef9fce7",
+    "created_at": "2025-12-17T02:20:50.357861357Z",
+    "os_architecture": "linux/amd64",
+    "default_command": ["/bin/bash"],
+    "python": "3.10.12",
+    "package_inventory_result": "未发现名称匹配 s100/s600/d-robotics/hobot/runtime/sdk/compiler 的已安装 Debian 包",
+    "documentation_probe_result": "未发现 /opt 或 /usr/local 下的 README、quickstart 或 example 候选文件"
+  },
+  "authorized_board": {
+    "alias": "s100-authorized-board",
+    "model": "D-Robotics RDK S100 V0P6",
+    "os": "Ubuntu 22.04",
+    "kernel_architecture": "Linux 6.1.112-rt43-DR-4.0.4-2510152230-gb381cb-g6c4511 / aarch64",
+    "accelerator_device_summary": ["bpu", "bpu_core0", "dcore0_rpmsg_bpu"],
+    "docker": "未安装或不可用",
+    "runtime_package_inventory_result": "未发现名称匹配 s100/s600/d-robotics/hobot/runtime/sdk/npu/bpu 的已安装 Debian 包"
+  },
+  "source_categories": [
+    "Host OS 与 Docker 版本只读查询",
+    "Docker image inspect 元数据查询",
+    "无网络、自动清理的容器内 Python 与包清单探测",
+    "经授权板端的 OS、架构、型号、包清单和设备节点只读查询"
+  ],
+  "redactions": ["主机地址", "SSH 端口", "用户名", "密码", "Token", "私钥", "宿主机敏感路径"]
+}

@@ -1,0 +1,1 @@
+{"schema_version":"1.0","task_id":"fixture-s100-compile","subtask_id":"fixture-s100-compile-1","capability":"compile","model":{"sha256":"77b64fce50ad42b13d8a6380c222e9cf44ef39c2ab9d893820a618d794d8dabe"},"timeout_seconds":1800}

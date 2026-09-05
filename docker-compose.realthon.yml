@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: jfrog.realthon.com/realthon-docker-registry/postgres:16-alpine
+    env_file: .env.production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: jfrog.realthon.com/realthon-docker-registry/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    env_file: .env.production
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: jfrog.realthon.com/realthon-docker-registry/redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: jfrog.realthon.com/realthon-docker-registry/solution-advisor-api:0.1.0
+    env_file: .env.production
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    image: jfrog.realthon.com/realthon-docker-registry/solution-advisor-api:0.1.0
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  common-analyzer:
+    image: jfrog.realthon.com/realthon-docker-registry/solution-advisor-common-analyzer:0.1.0
+    env_file: .env.production
+    command: ["python", "-m", "solution_advisor.common_analyzer.runner"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    image: jfrog.realthon.com/realthon-docker-registry/solution-advisor-web:0.1.0
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  minio_data:

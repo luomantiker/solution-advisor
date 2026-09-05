@@ -1,0 +1,21 @@
+image: python:3.11-slim
+
+stages:
+  - test
+
+test:
+  stage: test
+  before_script:
+    - pip install uv
+    - uv sync --all-groups
+  script:
+    - SOLUTION_ADVISOR_DATABASE_URL=sqlite:////tmp/solution-advisor-ci.sqlite3 uv run alembic upgrade head
+    - uv run pytest
+
+web-build:
+  stage: test
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci
+    - npm run build

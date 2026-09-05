@@ -1,0 +1,14 @@
+schema_version: "1.0"
+id: x5
+version: "1.0.0"
+capabilities: [static_check, compile]
+runner:
+  module: platform_runner
+  version: "1.0.0"
+rules:
+  version: "1.0.0"
+image_lock: docker/image.lock.yaml
+board_validation: NOT_EXECUTED
+performance: NOT_VERIFIED
+accuracy: NOT_VERIFIED
+deployment_recommendation: NOT_VERIFIED

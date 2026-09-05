@@ -1,0 +1,14 @@
+image: registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_cpu:v3.7.0
+image_id: sha256:eb401fa186f8f368d2c8d60d9b051893ee2be3c7317285f87c10e296eef9fce7
+repo_digest: sha256:f14856f507469d7fd3cd23c94308418cd98f714c7b4d7fcd9c965348c7f188f5
+os: linux
+architecture: amd64
+created: "2025-12-17T02:20:50.357861357Z"
+toolchain:
+  hb_compile: "3.5.3"
+  hbdk: "4.7.5"
+  hmct: "2.6.5"
+  ucp_container: "3.13.6"
+self_check:
+  - "hb_compile --help"
+  - "/usr/ucp/hrt_model_exec --help"

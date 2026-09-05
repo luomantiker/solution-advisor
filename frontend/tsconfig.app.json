@@ -1,0 +1,4 @@
+{
+  "compilerOptions": {"composite": true, "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo", "target": "ES2020", "module": "ESNext", "moduleResolution": "bundler", "strict": true, "jsx": "preserve", "lib": ["ES2020", "DOM"]},
+  "include": ["src/**/*.ts", "src/**/*.vue"]
+}

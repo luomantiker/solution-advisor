@@ -1,0 +1,17 @@
+# X5 板端 Profile 模板：仅复制到 Agent Host 的受保护路径。
+# 生效优先级：本 YAML 提供固定连接事实；password_file 的 Secret 仅供认证；
+# 控制面任务、平台包固定 Runner 规则优先于本文件，页面不能覆盖任何一项。
+# 文件权限 0600；不得提交 Git、写入数据库、日志、UI、报告或截图。
+
+# 1. 板端连接与 Host Key 校验。
+host: <仅本机配置的板端地址>
+port: 22
+username: <仅本机配置的板端账户>
+password_file: /etc/solution-advisor/secrets/x5-a/board-ssh-password
+known_hosts_file: /etc/solution-advisor/workers/x5-a/known_hosts
+remote_work_root: /tmp/solution-advisor/x5-a
+
+# 2. 固定受控执行边界（说明，不是可编辑命令）：
+# R0 固定执行：
+# hrt_model_exec perf --model_file <remote>/model.bin --profile_path <remote>/profile
+# 禁止在此处写入任意命令、perf_time、thread_num、用户输入、Docker 参数或密钥内容。

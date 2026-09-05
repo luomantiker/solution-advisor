@@ -1,0 +1,3 @@
+FROM registry.d-robotics.cc/deliver/ai_toolchain_ubuntu_22_s100_s600_cpu:v3.7.0
+COPY runner/ /runner/
+ENTRYPOINT ["python3", "-m", "platform_runner"]

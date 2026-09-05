@@ -1,0 +1,18 @@
+schema_version: "1.0"
+id: s100
+version: "3.7.0"
+capabilities: [compile, board_smoke]
+runner:
+  module: platform_runner
+  version: "1.0.0"
+  release: "s100-runner-1.0.0"
+rules:
+  version: "1.0.0"
+image_lock: docker/image.lock.yaml
+artifact_format: s100_hbm
+board_validation: VERIFIED_ON_VERSIONED_FIXTURE
+performance: VERIFIED_ON_VERSIONED_FIXTURE
+accuracy: NOT_VERIFIED
+stability: NOT_VERIFIED
+power: NOT_VERIFIED
+deployment_recommendation: NOT_VERIFIED

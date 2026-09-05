@@ -1,0 +1,8 @@
+{
+  "version": "demo-results-1.0.0",
+  "platforms": {
+    "X5": {"status": "DEMO_COMPLETE", "summary": "示例适配卡；并非真实编译或板端测试。", "observations": ["展示用静态结果", "无 Worker 或原始日志"]},
+    "S100": {"status": "DEMO_COMPLETE", "summary": "示例适配卡；并非真实编译或板端测试。", "observations": ["展示用静态结果", "无 Worker 或原始日志"]},
+    "Intel": {"status": "DEMO_COMPLETE", "summary": "示例适配卡；并非真实编译或板端测试。", "observations": ["展示用静态结果", "无 Worker 或原始日志"]}
+  }
+}

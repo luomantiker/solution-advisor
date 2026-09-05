@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "task_id": "fixture-x5-compile",
+  "subtask_id": "fixture-x5-compile-1",
+  "capability": "compile",
+  "model": {
+    "artifact_uri": "fixture://x5_conv_relu_linear_opset11",
+    "sha256": "b45032ae6a29ccafebaad4e6b82f4a2dc5185db6dffd4708e91e14c008734947"
+  },
+  "model_profile_ref": {"id": "fixture-profile", "analyzer_version": "2.0.0"},
+  "evaluation_config": {"march": "bayes-e", "fast_perf": true},
+  "platform_package": {"id": "x5", "version": "1.0.0", "image_id": "sha256:e9230ca9c1b65e4688f6103dad547b0785f75cd1ecbb536e7d939a7188419593"},
+  "timeout_seconds": 900,
+  "deadline_at": "2099-01-01T00:00:00Z"
+}

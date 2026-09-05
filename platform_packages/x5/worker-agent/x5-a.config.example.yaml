@@ -1,0 +1,45 @@
+# X5 HostAgent 实例配置模板：复制为 /etc/solution-advisor/workers/x5-a/config.yaml。
+# 配置来源优先级（低 → 高）：平台包内固定规则 < 本 YAML < 受保护 Secret / 板端 Profile 文件。
+# 控制面 Catalog、Binding、Candidate claim 始终是任务授权事实，不能被本 YAML 覆盖。
+
+# 1. Agent 实例与控制面连接。
+instance_id: x5-a
+control_plane_url: http://127.0.0.1:8000
+# 仅在 Worker Host 上创建，权限 0600；不进入 Git、数据库、日志或截图。
+registration_token_file: /etc/solution-advisor/secrets/x5-a/registration-token
+# 编译期间向控制面发送心跳的间隔；Token 只从上方文件读取，不写入本文件。
+heartbeat_interval_seconds: 15
+
+# 2. 受控平台包与 Runner：镜像、模块、挂载和 Docker 参数由程序固定，不能由页面传入。
+# HostAgent 不在本地声明或派生 platform_id。可用平台由控制面的审核目录、Binding
+# 与动态 Worker 关联共同决定；下面仅提供只读候选事实，供管理员审核时参考。
+worker_type: host-agent
+platform_package_path: /opt/solution-advisor/platform-packages/x5
+platform_package_version: "1.0.0"
+runner_module: platform_runner
+image: openexplorer/ai_toolchain_ubuntu_20_x5_gpu:v1.2.8-py310
+image_id: sha256:e9230ca9c1b65e4688f6103dad547b0785f75cd1ecbb536e7d939a7188419593
+toolchain_version: hb_mapper 1.24.3
+rule_version: "1.1.0"
+capabilities: [static_check, compile, board_smoke]
+max_concurrency: 1
+timeout_seconds: 900
+# systemd 启用 PrivateTmp 时，固定 Runner 的挂载输入必须位于 Agent 专属共享工作根，
+# 不能使用私有 /tmp；该路径只由 Host 管理员配置，页面和任务不能覆盖。
+work_root: /var/lib/solution-advisor/worker/x5-a/work
+
+# 3. 板端 Profile 引用：真实地址、账户、密码只保存在这个 Host 的独立受保护文件。
+# 仅 HostAgent 所在宿主机可读的板端 Profile；地址和 Secret 引用不进入 Git。
+board_profile_path: /etc/solution-advisor/workers/x5-a/board.yaml
+
+# 4. Evidence 类型映射：用于控制面可追溯证据分类，不是用户可执行命令。
+evidence_types:
+  static_check: x5_static_check
+  compile_log: x5_compile_log
+  compile_summary: x5_compile_summary
+  runner_result: x5_runner_result
+  compiled_model: x5_compiled_model
+  board_preflight: x5_board_preflight
+  board_load_log: x5_board_load_log
+  board_inference_log: x5_board_inference_log
+  board_result: x5_board_result

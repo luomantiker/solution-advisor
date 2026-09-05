@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "task_id": "fixture-x5-static",
+  "subtask_id": "fixture-x5-static-1",
+  "capability": "static_check",
+  "model": {
+    "artifact_uri": "fixture://controlled-model",
+    "sha256": "__MODEL_SHA256__"
+  },
+  "model_profile_ref": {"id": "fixture-profile", "analyzer_version": "2.0.0"},
+  "platform_package": {"id": "x5", "version": "1.0.0", "image_id": "sha256:e9230ca9c1b65e4688f6103dad547b0785f75cd1ecbb536e7d939a7188419593"},
+  "deadline_at": "2099-01-01T00:00:00Z"
+}
