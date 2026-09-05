@@ -98,13 +98,18 @@ class HostImage(Base):
 
 
 class Board(Base):
-    """A board registered to a HostAgent; secrets remain outside the database."""
+    """A board registered to a HostAgent; its login password is never persisted."""
     __tablename__ = "boards"
     __table_args__ = (UniqueConstraint("agent_id", "name", name="uq_board_agent_name"),)
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: f"board_{uuid4().hex}")
     agent_id: Mapped[str] = mapped_column(ForeignKey("agents.id"), index=True)
     name: Mapped[str] = mapped_column(String(120))
     board_type: Mapped[str] = mapped_column(String(120))
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    username: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # Retained for existing installations.  New registrations derive this
+    # non-secret display reference from the address and account name.
     connection_ref: Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(24), default="UNVERIFIED", index=True)
     last_test_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

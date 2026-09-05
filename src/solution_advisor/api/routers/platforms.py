@@ -1,4 +1,5 @@
 import json
+import ipaddress
 import re
 import shlex
 from zipfile import BadZipFile
@@ -106,13 +107,18 @@ class BoardInput(BaseModel):
     agent_id: str = Field(pattern=r"^[a-z][a-z0-9-]{1,62}$")
     name: str = Field(min_length=1, max_length=120)
     board_type: str = Field(min_length=1, max_length=120)
-    connection_ref: str = Field(min_length=1, max_length=255)
+    ip_address: str = Field(min_length=1, max_length=45)
+    port: int = Field(ge=1, le=65535)
+    username: str = Field(min_length=1, max_length=120)
+    password: str = Field(min_length=1, max_length=256, exclude=True)
 
-    @field_validator("connection_ref")
+    @field_validator("ip_address")
     @classmethod
-    def connection_ref_is_reference_only(cls, value: str):
-        if any(mark in value.lower() for mark in ("password=", "token=", "private_key=", "ssh://")):
-            raise ValueError("board_connection_must_be_a_non_secret_reference")
+    def ip_address_is_valid(cls, value: str):
+        try:
+            ipaddress.ip_address(value)
+        except ValueError as exc:
+            raise ValueError("board_ip_address_invalid") from exc
         return value
 
 class CandidateEdit(BaseModel):
@@ -764,7 +770,8 @@ def host_agents(request: Request, authorization: str | None = Header(None)):
 
 def board_payload(item: Board) -> dict:
     return {"id": item.id, "agent_id": item.agent_id, "name": item.name, "board_type": item.board_type,
-            "connection_ref": item.connection_ref, "status": item.status,
+            "ip_address": item.ip_address, "port": item.port, "username": item.username,
+            "status": item.status,
             "last_test_at": item.last_test_at.isoformat() if item.last_test_at else None,
             "last_test_result": item.last_test_result,
             "created_at": item.created_at.isoformat() if item.created_at else None}
@@ -782,7 +789,11 @@ def create_board(body: BoardInput, request: Request, authorization: str | None =
     principal = principal_admin(request, authorization); session = request.app.state.session_factory()
     try:
         if not session.get(HostAgent, body.agent_id): raise HTTPException(422, {"code": "agent_not_found"})
-        item = Board(**body.model_dump()); session.add(item)
+        values = body.model_dump()
+        # ``password`` is declared write-only, so it is excluded from this
+        # mapping.  The control plane must never persist or return it.
+        values["connection_ref"] = f"{values['username']}@{values['ip_address']}:{values['port']}"
+        item = Board(**values); session.add(item)
         session.add(PlatformAudit(action="BOARD_CREATED", actor=principal.subject, summary=f"登记板卡 {item.name}"))
         try: session.commit()
         except IntegrityError:

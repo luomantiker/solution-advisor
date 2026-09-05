@@ -48,8 +48,11 @@ def test_host_agent_board_preflight_and_board_binding(client):
     assert agents.status_code == 200
     assert agents.json()[0]["id"] == "x5-a" and agents.json()[0]["host_state"] == "ONLINE"
     created = client.post("/api/admin/boards", headers=ADMIN, json={
-        "agent_id": "x5-a", "name": "x5-board-01", "board_type": "X5", "connection_ref": "secret-ref:x5-board-01"})
+        "agent_id": "x5-a", "name": "x5-board-01", "board_type": "X5",
+        "ip_address": "192.168.1.100", "port": 22, "username": "root", "password": "test-password"})
     assert created.status_code == 201 and created.json()["status"] == "UNVERIFIED"
+    assert created.json()["ip_address"] == "192.168.1.100"
+    assert "password" not in created.json()
     board = client.post(f"/api/admin/boards/{created.json()['id']}/test", headers=ADMIN)
     assert board.status_code == 200 and board.json()["status"] == "READY"
     catalog = x5_catalog(client)
