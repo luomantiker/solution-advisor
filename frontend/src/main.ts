@@ -13,6 +13,7 @@ import AdminPage from './pages/AdminPage.vue'
 import PlatformCommandTemplateGuidePage from './pages/PlatformCommandTemplateGuidePage.vue'
 import PeoplePage from './pages/PeoplePage.vue'
 import SystemSettingsPage from './pages/SystemSettingsPage.vue'
+import PlatformBindingsPage from './pages/PlatformBindingsPage.vue'
 import './style.css'
 
 const router = createRouter({ history: createWebHistory(), routes: [
@@ -25,6 +26,7 @@ const router = createRouter({ history: createWebHistory(), routes: [
   { path: '/admin', component: AdminPage },
   { path: '/people', component: PeoplePage },
   { path: '/system-settings', component: SystemSettingsPage },
+  { path: '/platform-bindings', component: PlatformBindingsPage },
   { path: '/platform-command-template-guide', component: PlatformCommandTemplateGuidePage },
 ] })
 createApp(App).use(router).mount('#app')

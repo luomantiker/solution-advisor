@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from solution_advisor.api.routers.analysis import admin
 from solution_advisor.artifacts.domain import EvidencePhase, EvidenceType
 from solution_advisor.artifacts.service import ArtifactService, EvidenceService
-from solution_advisor.platforms.domain import CandidateHistory, CandidateValidationTask, HostImage, PlatformAudit, PlatformBinding, PlatformCandidate, PlatformCatalog, PlatformType, PlatformWorker, UserAccount
+from solution_advisor.platforms.domain import Board, CandidateHistory, CandidateValidationTask, HostAgent, HostImage, PlatformAudit, PlatformBinding, PlatformCandidate, PlatformCatalog, PlatformType, PlatformWorker, UserAccount
 from solution_advisor.platforms.service import PlatformError, PlatformRegistry, binding_payload, catalog_payload, is_governance_service_image, utcnow, worker_payload
 from solution_advisor.security import ADMIN, SUPER_ADMIN
 
@@ -39,6 +39,7 @@ class BindingInput(BaseModel):
     agent_id: str = Field(pattern=r"^[a-z][a-z0-9-]{1,62}$")
     catalog_id: str = Field(pattern=r"^catalog_[a-zA-Z0-9_]+$")
     host_image_id: str | None = Field(default=None, pattern=r"^host_image_[a-zA-Z0-9_]+$")
+    board_id: str | None = Field(default=None, pattern=r"^board_[a-zA-Z0-9_]+$")
     capabilities: list[str]
     max_concurrency: int = Field(ge=1, le=32)
 
@@ -100,6 +101,19 @@ def platform_types(request: Request, authorization: str | None = Header(None)) -
 
 class HostImageVisibilityInput(BaseModel):
     hidden: bool
+
+class BoardInput(BaseModel):
+    agent_id: str = Field(pattern=r"^[a-z][a-z0-9-]{1,62}$")
+    name: str = Field(min_length=1, max_length=120)
+    board_type: str = Field(min_length=1, max_length=120)
+    connection_ref: str = Field(min_length=1, max_length=255)
+
+    @field_validator("connection_ref")
+    @classmethod
+    def connection_ref_is_reference_only(cls, value: str):
+        if any(mark in value.lower() for mark in ("password=", "token=", "private_key=", "ssh://")):
+            raise ValueError("board_connection_must_be_a_non_secret_reference")
+        return value
 
 class CandidateEdit(BaseModel):
     note: str = Field(max_length=500)
@@ -727,6 +741,72 @@ def host_images(request: Request, include_hidden: bool = False, authorization: s
             state = "MANAGED" if catalog and catalog.state == "AVAILABLE" else "INTEGRATING" if (candidate or catalog) else "DISCOVERED"
             result.append({"id":image.id,"agent_id":image.agent_id,"image_ref":image.image_ref,"image_id":image.image_id,"toolchain_version":image.toolchain_version,"state":state,"catalog_id":catalog.id if catalog else None,"candidate_id":candidate.id if candidate else None,"hidden":image.hidden,"hidden_by":image.hidden_by,"hidden_at":image.hidden_at.isoformat() if image.hidden_at else None})
         return result
+    finally: session.close()
+
+
+@router.get("/api/admin/host-agents")
+def host_agents(request: Request, authorization: str | None = Header(None)):
+    """List registered Hosts without exposing runtime secrets or host paths."""
+    admin(request, authorization); session = request.app.state.session_factory()
+    try:
+        images = list(session.scalars(select(HostImage)))
+        bindings = list(session.scalars(select(PlatformBinding)))
+        boards = list(session.scalars(select(Board)))
+        return [{"id": agent.id, "host_state": agent.host_state, "agent_version": agent.agent_version,
+                 "last_heartbeat_at": agent.last_heartbeat_at.isoformat() if agent.last_heartbeat_at else None,
+                 "last_error": agent.last_error,
+                 "image_count": sum(image.agent_id == agent.id for image in images),
+                 "binding_count": sum(binding.agent_id == agent.id for binding in bindings),
+                 "ready_board_count": sum(board.agent_id == agent.id and board.status == "READY" for board in boards)}
+                for agent in session.scalars(select(HostAgent).order_by(HostAgent.id))]
+    finally: session.close()
+
+
+def board_payload(item: Board) -> dict:
+    return {"id": item.id, "agent_id": item.agent_id, "name": item.name, "board_type": item.board_type,
+            "connection_ref": item.connection_ref, "status": item.status,
+            "last_test_at": item.last_test_at.isoformat() if item.last_test_at else None,
+            "last_test_result": item.last_test_result,
+            "created_at": item.created_at.isoformat() if item.created_at else None}
+
+
+@router.get("/api/admin/boards")
+def boards(request: Request, authorization: str | None = Header(None)):
+    admin(request, authorization); session = request.app.state.session_factory()
+    try: return [board_payload(item) for item in session.scalars(select(Board).order_by(Board.created_at.desc()))]
+    finally: session.close()
+
+
+@router.post("/api/admin/boards", status_code=201)
+def create_board(body: BoardInput, request: Request, authorization: str | None = Header(None)):
+    principal = principal_admin(request, authorization); session = request.app.state.session_factory()
+    try:
+        if not session.get(HostAgent, body.agent_id): raise HTTPException(422, {"code": "agent_not_found"})
+        item = Board(**body.model_dump()); session.add(item)
+        session.add(PlatformAudit(action="BOARD_CREATED", actor=principal.subject, summary=f"登记板卡 {item.name}"))
+        try: session.commit()
+        except IntegrityError:
+            session.rollback(); raise HTTPException(409, {"code": "board_already_registered"})
+        return board_payload(item)
+    finally: session.close()
+
+
+@router.post("/api/admin/boards/{board_id}/test")
+def test_board(board_id: str, request: Request, authorization: str | None = Header(None)):
+    """Run a safe control-plane preflight; actual credentials stay with HostAgent."""
+    principal = principal_admin(request, authorization); session = request.app.state.session_factory()
+    try:
+        item = session.get(Board, board_id)
+        if not item: raise HTTPException(404, {"code": "board_not_found"})
+        agent = session.get(HostAgent, item.agent_id)
+        item.last_test_at = utcnow()
+        if agent and agent.host_state == "ONLINE":
+            item.status, item.last_test_result = "READY", {"status": "READY", "message": "HostAgent 在线；板卡凭据由 Agent 受控验证。"}
+        else:
+            item.status, item.last_test_result = "OFFLINE", {"status": "OFFLINE", "message": "HostAgent 离线，无法执行板卡预检。"}
+        session.add(PlatformAudit(action="BOARD_PREFLIGHT", actor=principal.subject,
+                                  result="SUCCEEDED" if item.status == "READY" else "REJECTED", summary=f"板卡 {item.name}：{item.status}"))
+        session.commit(); return board_payload(item)
     finally: session.close()
 
 
