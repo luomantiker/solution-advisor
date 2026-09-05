@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 
 from solution_advisor.common_analyzer.domain import WorkerCapacityLease, WorkerInstance
-from solution_advisor.platforms.domain import HostAgent, HostImage, PlatformAudit, PlatformBinding, PlatformCandidate, PlatformCatalog, PlatformWorker
+from solution_advisor.platforms.domain import Board, HostAgent, HostImage, PlatformAudit, PlatformBinding, PlatformCandidate, PlatformCatalog, PlatformWorker
 
 ALLOWED_CAPABILITIES = {"static_check", "compile", "board_smoke"}
 CATALOG_STATES = {"CANDIDATE_IMAGE", "PENDING_INTEGRATION", "AVAILABLE", "REJECTED", "SUSPENDED"}
@@ -78,7 +78,7 @@ def binding_payload(session, item: PlatformBinding) -> dict:
     return {"id": item.id, "agent_id": item.agent_id, "catalog_id": item.catalog_id, "platform_id": item.platform_id,
             "state": item.state, "capabilities": item.capabilities, "max_concurrency": item.max_concurrency,
             "image_lock_version": item.image_lock_version,
-            "actual_image_ref": item.actual_image_ref,
+            "actual_image_ref": item.actual_image_ref, "board_id": item.board_id,
             "actual_image_digest": item.actual_image_digest or item.image_lock_version,
             "image_match_status": item.image_match_status,
             "runner_version": item.runner_version,
@@ -163,11 +163,16 @@ class PlatformRegistry:
         if state == "AVAILABLE": return self.publish(catalog_id)
         raise PlatformError("invalid_catalog_state")
 
-    def create_binding(self, *, agent_id: str, catalog_id: str, host_image_id: str | None = None,
+    def create_binding(self, *, agent_id: str, catalog_id: str, host_image_id: str | None = None, board_id: str | None = None,
                        capabilities: list[str], max_concurrency: int):
         catalog = self.session.get(PlatformCatalog, catalog_id); agent = self.session.get(HostAgent, agent_id)
         if not catalog or catalog.state != "AVAILABLE": raise PlatformError("available_catalog_required")
         if not agent: raise PlatformError("agent_not_found")
+        if board_id:
+            board = self.session.get(Board, board_id)
+            if not board: raise PlatformError("board_not_found")
+            if board.agent_id != agent_id: raise PlatformError("binding_board_agent_mismatch")
+            if board.status != "READY": raise PlatformError("ready_board_required")
         baseline_digest = str(catalog.image_lock.get("digest", ""))
         images = list(self.session.scalars(select(HostImage).where(HostImage.agent_id == agent_id)))
         if host_image_id:
@@ -188,6 +193,7 @@ class PlatformRegistry:
                                   capabilities=capabilities, max_concurrency=max_concurrency,
                                   image_lock_version=baseline_digest,
                                   actual_image_ref=image.image_ref, actual_image_digest=image.image_id,
+                                  board_id=board_id,
                                   image_match_status="MATCH" if image.image_id == baseline_digest else "VERSION_MATCH_DIGEST_DIFFERENT",
                                   runner_version=str(catalog.runner.get("version")),
                                   state="HEALTHY" if agent.host_state == "ONLINE" else "OFFLINE",

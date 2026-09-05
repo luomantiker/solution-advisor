@@ -97,6 +97,26 @@ class HostImage(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
+class Board(Base):
+    """A board registered to a HostAgent; its login password is never persisted."""
+    __tablename__ = "boards"
+    __table_args__ = (UniqueConstraint("agent_id", "name", name="uq_board_agent_name"),)
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: f"board_{uuid4().hex}")
+    agent_id: Mapped[str] = mapped_column(ForeignKey("agents.id"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    board_type: Mapped[str] = mapped_column(String(120))
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    username: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # Retained for existing installations.  New registrations derive this
+    # non-secret display reference from the address and account name.
+    connection_ref: Mapped[str] = mapped_column(String(255))
+    status: Mapped[str] = mapped_column(String(24), default="UNVERIFIED", index=True)
+    last_test_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_test_result: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class PlatformBinding(Base):
     __tablename__ = "platform_bindings"
     __table_args__ = (UniqueConstraint("agent_id", "catalog_id", name="uq_platform_binding_agent_catalog"),)
@@ -110,6 +130,7 @@ class PlatformBinding(Base):
     image_lock_version: Mapped[str] = mapped_column(String)
     actual_image_ref: Mapped[str | None] = mapped_column(String, nullable=True)
     actual_image_digest: Mapped[str | None] = mapped_column(String, nullable=True)
+    board_id: Mapped[str | None] = mapped_column(ForeignKey("boards.id"), nullable=True, index=True)
     image_match_status: Mapped[str] = mapped_column(String, default="MATCH")
     runner_version: Mapped[str] = mapped_column(String)
     last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
