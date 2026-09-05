@@ -9,6 +9,7 @@ import StatusBadge from '../components/StatusBadge.vue'
 const agents = ref<any[]>([]), catalogs = ref<any[]>([]), images = ref<any[]>([]), boards = ref<any[]>([]), bindings = ref<any[]>([])
 const error = ref(''), saving = ref(false)
 const form = ref({ agent_id: '', catalog_id: '', host_image_id: '', board_id: '', capabilities: ['static_check'], max_concurrency: 1 })
+
 const boardForm = ref({ agent_id: '', name: '', board_type: '', ip_address: '', port: 22, username: '', password: '' })
 const selectedImages = computed(() => images.value.filter(item => item.agent_id === form.value.agent_id))
 const selectedBoards = computed(() => boards.value.filter(item => item.agent_id === form.value.agent_id && item.status === 'READY'))
